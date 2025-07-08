@@ -18,6 +18,7 @@ from pyecharts.globals import ChartType, SymbolType
 from pyecharts.commons.utils import JsCode
 import json
 import time
+from flask import send_from_directory
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
@@ -220,6 +221,10 @@ def create_route_chart(df, child_paths, title):
 @app.route('/')
 def index():
     return render_template('index.html', now=time.time())
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'data'), filename, as_attachment=True)
 
 @app.route('/preview_data', methods=['POST'])
 def preview_data():

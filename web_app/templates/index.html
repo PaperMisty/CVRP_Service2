@@ -19,6 +19,10 @@
             <span id="fileName" class="file-name">未选择文件</span>
         </div>
 
+        <div class="sample-data">
+            <p>没有数据文件？ <a href="{{ url_for('download_file', filename='../../data/location_中百仓储_武汉市.xlsx') }}">下载示例数据</a></p>
+        </div>
+
         <div class="controls">
             <label for="algorithm-select">选择算法:</label>
             <select id="algorithm-select">
