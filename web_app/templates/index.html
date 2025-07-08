@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVRP Solver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>车辆路径规划问题 (CVRP) 求解器</h1>
+        
+        <div class="upload-section">
+            <div id="drop-area" class="drop-area">
+                <p>拖放 Excel 文件到此处，或点击选择文件</p>
+                <input type="file" id="fileElem" accept=".xlsx, .xls" style="display: none;">
+            </div>
+            <button id="fileSelect" class="button">选择文件</button>
+            <span id="fileName" class="file-name">未选择文件</span>
+        </div>
+
+        <div class="controls">
+            <label for="algorithm-select">选择算法:</label>
+            <select id="algorithm-select">
+                <option value="Clark-Wright">Clark-Wright Savings</option>
+                <option value="ACO">Ant Colony Optimization</option>
+                <option value="GA">Genetic Algorithm</option>
+                <option value="NNH">Nearest Neighbor Heuristic</option>
+            </select>
+
+            <label for="capacity-input">车辆容量:</label>
+            <input type="number" id="capacity-input" value="20" min="1">
+
+            <!-- ACO Parameters -->
+            <div id="aco-params" class="algo-params">
+                <label for="aco-ants">蚂蚁数量:</label>
+                <input type="number" id="aco-ants" value="10" min="1" max="20">
+                <label for="aco-iterations">迭代次数:</label>
+                <input type="number" id="aco-iterations" value="20" min="1" max="40">
+                <label for="aco-alpha">Alpha:</label>
+                <input type="number" id="aco-alpha" value="1.0" min="0.1" max="2.0" step="0.1">
+                <label for="aco-beta">Beta:</label>
+                <input type="number" id="aco-beta" value="5.0" min="0.1" max="10.0" step="0.1">
+                <label for="aco-rho">Rho:</label>
+                <input type="number" id="aco-rho" value="0.5" min="0.1" max="1.0" step="0.1">
+            </div>
+
+            <!-- GA Parameters -->
+            <div id="ga-params" class="algo-params" style="display: none;">
+                <label for="ga-population">种群大小:</label>
+                <input type="number" id="ga-population" value="50" min="10" max="500">
+                <label for="ga-generations">迭代次数:</label>
+                <input type="number" id="ga-generations" value="100" min="10" max="500">
+                <label for="ga-mutation">变异率:</label>
+                <input type="number" id="ga-mutation" value="0.1" min="0.01" max="0.2" step="0.01">
+                <label for="ga-crossover">交叉率:</label>
+                <input type="number" id="ga-crossover" value="0.8" min="0.1" max="1.0" step="0.1">
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="execute-btn" class="button">执行路径规划</button>
+            <button id="clear-btn" class="button secondary">清除结果</button>
+        </div>
+
+        <div class="results">
+            <h2>结果</h2>
+            <p>最短距离: <span id="best-distance">N/A</span></p>
+            <p>运行时间: <span id="execution-time">N/A</span></p>
+            <div id="chart-container" style="width:100%; height:600px;"></div>
+            <div id="routes-container">
+                <h3>路线详情</h3>
+                <ul id="routes-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include ECharts library -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.3.3/dist/echarts.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js', v=now) }}"></script>
+</body>
+</html>
