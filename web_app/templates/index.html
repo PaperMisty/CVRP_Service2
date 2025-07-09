@@ -11,20 +11,22 @@
         <h1>车辆路径规划问题 (CVRP) 求解器</h1>
         <div class="main-container">
             <div class="main-content">
+                
+                <div class="upload-section" >
                 <h2>算法执行</h2>
-                <div class="upload-section">
                     <div id="drop-area" class="drop-area">
                         <p>拖放 Excel 文件到此处，或点击选择文件</p>
                         <input type="file" id="fileElem" accept=".xlsx, .xls" style="display: none;">
                     </div>
-                    <button id="fileSelect" class="button">选择文件</button>
-                    <span id="fileName" class="file-name">未选择文件</span>
+                    <div class="describe" style="display: flex; justify-content: space-between;">
+                        <div>
+                            <button id="fileSelect" class="button">选择文件</button>
+                            <span id="fileName" class="file-name">未选择文件</span>
+                        </div>            
+                        <span>没有数据文件？ <a href="{{ url_for('static', filename='download/location_中百仓储_武汉市.xlsx') }}">下载示例数据</a></span>
+                
+                    </div>
                 </div>
-
-                <div class="sample-data">
-                    <p>没有数据文件？ <a href="{{ url_for('static', filename='download/location_中百仓储_武汉市.xlsx') }}">下载示例数据</a></p>
-                </div>
-
                 <div class="controls">
                     <label for="algorithm-select">选择算法:</label>
                     <select id="algorithm-select">
@@ -135,19 +137,28 @@
                     <div class="accordion-item">
                         <button class="accordion-header">蚁群优化 (ACO)</button>
                         <div class="accordion-content">
-                            <p><strong>来源:</strong> 由Marco Dorigo于1992年提出，灵感来源于蚂蚁寻找食物的行为。</p>
-                            <p><strong>原理:</strong> 模拟蚂蚁通过释放“信息素”来寻找最短路径。蚂蚁倾向于选择信息素浓度更高的路径，而较短的路径信息素积累更快，形成正反馈，引导整个蚁群找到优解。</p>
-                            <p><strong>运作过程:</strong></p>
-                            <ol>
-                                <li>初始化所有路径上的信息素。</li>
-                                <li>让一组“蚂蚁”根据信息素浓度和距离概率性地构建路线。</li>
-                                <li>根据蚂蚁构建的路线总长度更新信息素，短路径获得更多信息素。</li>
-                                <li>所有路径上的信息素会以一定速率挥发。</li>
-                                <li>重复构建和更新过程，直到达到迭代次数。</li>
-                            </ol>
-                            <p><strong>适用场景:</strong> 适用于复杂的组合优化问题，鲁棒性好，能找到高质量的解，但计算成本相对较高。</p>
-                        </div>
+                        <p><strong>来源:</strong> 由Marco Dorigo于1992年提出，灵感来源于蚂蚁寻找食物的行为。</p>
+                        <p><strong>原理:</strong> 模拟蚂蚁通过释放“信息素”来寻找最短路径。蚂蚁倾向于选择信息素浓度更高的路径，而较短的路径信息素积累更快，形成正反馈，引导整个蚁群找到优解。</p>
+                        <p><strong>运作过程:</strong></p>
+                        <ol>
+                            <li>初始化所有路径上的信息素。</li>
+                            <li>让一组“蚂蚁”根据信息素浓度和距离概率性地构建路线。</li>
+                            <li>根据蚂蚁构建的路线总长度更新信息素，短路径获得更多信息素。</li>
+                            <li>所有路径上的信息素会以一定速率挥发。</li>
+                            <li>重复构建和更新过程，直到达到迭代次数。</li>
+                        </ol>
+                        <p><strong>适用场景:</strong> 适用于复杂的组合优化问题，鲁棒性好，能找到高质量的解，但计算成本相对较高。</p>
+
+                        <p><strong>参数说明:</strong></p>
+                        <ul>
+                            <li><strong>num_ants：</strong> 蚂蚁数量，影响搜索广度。</li>
+                            <li><strong>alpha：</strong> 信息素重要程度，越大越依赖已有信息素。</li>
+                            <li><strong>beta：</strong> 启发函数权重，越大越依赖路径距离。</li>
+                            <li><strong>rho：</strong> 信息素挥发系数，控制旧信息素的保留程度。</li>
+                            <li><strong>iterations：</strong> 算法迭代次数，越多越可能找到优解。</li>
+                        </ul>
                     </div>
+
                     <div class="accordion-item">
                         <button class="accordion-header">遗传算法 (GA)</button>
                         <div class="accordion-content">
@@ -163,6 +174,14 @@
                                 <li>重复此过程，直到达到预设的代数。</li>
                             </ol>
                             <p><strong>适用场景:</strong> 强大的全局搜索能力，适合求解大规模、复杂的优化问题，但参数设置较为敏感，计算时间较长。</p>
+                            <ul>
+                                <li><strong>population_size：</strong> 种群数量，影响解空间覆盖范围。</li>
+                                <li><strong>crossover_rate：</strong> 交叉概率，决定个体交叉生成新解的频率。</li>
+                                <li><strong>mutation_rate：</strong> 变异概率，用于维持种群多样性，防止陷入局部最优。</li>
+                                <li><strong>num_generations：</strong> 迭代次数（代数），越多越可能获得更优解。</li>
+                                <li><strong>selection_method：</strong> 选择方式，如轮盘赌、锦标赛选择等，决定哪些个体能进入下一代（本项目默认选择轮盘赌法）。</li>
+                            </ul>
+
                         </div>
                     </div>
                     <div class="accordion-item">
