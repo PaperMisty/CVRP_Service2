@@ -7,7 +7,7 @@ body {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1400px; /* 增加宽度以容纳侧边栏 */
     margin: 20px auto;
     background-color: #fff;
     padding: 30px;
@@ -15,9 +15,85 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-h1, h2 {
+.main-container {
+    display: flex;
+    gap: 30px; /* 主内容和侧边栏之间的间距 */
+}
+
+.main-content {
+    flex: 3; /* 主内容占据更多空间 */
+}
+
+.sidebar {
+    flex: 2; /* 侧边栏占据较少空间 */
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* 折叠面板样式 */
+.accordion {
+    width: 100%;
+}
+
+.accordion-item {
+    border-bottom: 1px solid #ddd;
+}
+
+.accordion-header {
+    background-color: #f1f1f1;
+    color: #444;
+    cursor: pointer;
+    padding: 15px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    outline: none;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.accordion-header:hover, .accordion-header.active {
+    background-color: #ddd;
+}
+
+.accordion-header::after {
+    content: '+'; /* Plus sign */
+    font-size: 18px;
+    font-weight: bold;
+    float: right;
+    transition: transform 0.3s ease;
+}
+
+.accordion-header.active::after {
+    content: '-'; /* Minus sign */
+}
+
+.accordion-content {
+    padding: 0 18px;
+    background-color: white;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.accordion-content p, .accordion-content ol {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+h1 {
     color: #0056b3;
     text-align: center;
+}
+
+h2 {
+    color: #0056b3;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
 .upload-section, .controls, .results {
@@ -105,4 +181,42 @@ h1, h2 {
 .sample-data {
     text-align: center;
     margin-top: 15px;
+}
+
+/* Routes Table Styles */
+#routes-container {
+    margin-top: 20px;
+}
+
+.routes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.routes-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+#routes-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#routes-table th, #routes-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+#routes-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+#routes-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
 }

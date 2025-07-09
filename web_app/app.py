@@ -224,7 +224,7 @@ def index():
 
 @app.route('/download/<filename>')
 def download_file(filename):
-    return send_from_directory(os.path.join(app.static_folder, 'data'), filename, as_attachment=True)
+    return send_from_directory(os.path.join(app.static_folder, 'download'), filename, as_attachment=True)
 
 @app.route('/preview_data', methods=['POST'])
 def preview_data():

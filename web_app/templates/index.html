@@ -9,78 +9,186 @@
 <body>
     <div class="container">
         <h1>车辆路径规划问题 (CVRP) 求解器</h1>
-        
-        <div class="upload-section">
-            <div id="drop-area" class="drop-area">
-                <p>拖放 Excel 文件到此处，或点击选择文件</p>
-                <input type="file" id="fileElem" accept=".xlsx, .xls" style="display: none;">
+        <div class="main-container">
+            <div class="main-content">
+                <h2>算法执行</h2>
+                <div class="upload-section">
+                    <div id="drop-area" class="drop-area">
+                        <p>拖放 Excel 文件到此处，或点击选择文件</p>
+                        <input type="file" id="fileElem" accept=".xlsx, .xls" style="display: none;">
+                    </div>
+                    <button id="fileSelect" class="button">选择文件</button>
+                    <span id="fileName" class="file-name">未选择文件</span>
+                </div>
+
+                <div class="sample-data">
+                    <p>没有数据文件？ <a href="{{ url_for('static', filename='download/location_中百仓储_武汉市.xlsx') }}">下载示例数据</a></p>
+                </div>
+
+                <div class="controls">
+                    <label for="algorithm-select">选择算法:</label>
+                    <select id="algorithm-select">
+                        <option value="Clark-Wright">Clark-Wright Savings</option>
+                        <option value="ACO">Ant Colony Optimization</option>
+                        <option value="GA">Genetic Algorithm</option>
+                        <option value="NNH">Nearest Neighbor Heuristic</option>
+                    </select>
+
+                    <label for="capacity-input">车辆容量:</label>
+                    <input type="number" id="capacity-input" value="20" min="1">
+
+                    <!-- ACO Parameters -->
+                    <div id="aco-params" class="algo-params">
+                        <label for="aco-ants">蚂蚁数量:</label>
+                        <input type="number" id="aco-ants" value="10" min="1" max="20">
+                        <label for="aco-iterations">迭代次数:</label>
+                        <input type="number" id="aco-iterations" value="20" min="1" max="40">
+                        <label for="aco-alpha">Alpha:</label>
+                        <input type="number" id="aco-alpha" value="1.0" min="0.1" max="2.0" step="0.1">
+                        <label for="aco-beta">Beta:</label>
+                        <input type="number" id="aco-beta" value="5.0" min="0.1" max="10.0" step="0.1">
+                        <label for="aco-rho">Rho:</label>
+                        <input type="number" id="aco-rho" value="0.5" min="0.1" max="1.0" step="0.1">
+                    </div>
+
+                    <!-- GA Parameters -->
+                    <div id="ga-params" class="algo-params" style="display: none;">
+                        <label for="ga-population">种群大小:</label>
+                        <input type="number" id="ga-population" value="50" min="10" max="500">
+                        <label for="ga-generations">迭代次数:</label>
+                        <input type="number" id="ga-generations" value="100" min="10" max="500">
+                        <label for="ga-mutation">变异率:</label>
+                        <input type="number" id="ga-mutation" value="0.1" min="0.01" max="0.2" step="0.01">
+                        <label for="ga-crossover">交叉率:</label>
+                        <input type="number" id="ga-crossover" value="0.8" min="0.1" max="1.0" step="0.1">
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="execute-btn" class="button">执行路径规划</button>
+                    <button id="clear-btn" class="button secondary">清除结果</button>
+                </div>
+
+                <div class="results">
+                    <h2>结果</h2>
+                    <p>🚚最短距离: <span id="best-distance">N/A</span></p>
+                    <p>⏱️运行时间: <span id="execution-time">N/A</span></p>
+                    <div id="chart-container" style="width:100%; height:600px;"></div>
+                    <div id="routes-container">
+                        <div class="routes-header">
+                            <h3>路线详情</h3>
+                            <button id="export-btn" class="button secondary" style="display: none;">导出Excel</button>
+                        </div>
+                        <table id="routes-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Route</th>
+                                    <th>Length</th>
+                                    <th>Cargo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="routes-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <button id="fileSelect" class="button">选择文件</button>
-            <span id="fileName" class="file-name">未选择文件</span>
-        </div>
-
-        <div class="sample-data">
-            <p>没有数据文件？ <a href="{{ url_for('download_file', filename='../../data/location_中百仓储_武汉市.xlsx') }}">下载示例数据</a></p>
-        </div>
-
-        <div class="controls">
-            <label for="algorithm-select">选择算法:</label>
-            <select id="algorithm-select">
-                <option value="Clark-Wright">Clark-Wright Savings</option>
-                <option value="ACO">Ant Colony Optimization</option>
-                <option value="GA">Genetic Algorithm</option>
-                <option value="NNH">Nearest Neighbor Heuristic</option>
-            </select>
-
-            <label for="capacity-input">车辆容量:</label>
-            <input type="number" id="capacity-input" value="20" min="1">
-
-            <!-- ACO Parameters -->
-            <div id="aco-params" class="algo-params">
-                <label for="aco-ants">蚂蚁数量:</label>
-                <input type="number" id="aco-ants" value="10" min="1" max="20">
-                <label for="aco-iterations">迭代次数:</label>
-                <input type="number" id="aco-iterations" value="20" min="1" max="40">
-                <label for="aco-alpha">Alpha:</label>
-                <input type="number" id="aco-alpha" value="1.0" min="0.1" max="2.0" step="0.1">
-                <label for="aco-beta">Beta:</label>
-                <input type="number" id="aco-beta" value="5.0" min="0.1" max="10.0" step="0.1">
-                <label for="aco-rho">Rho:</label>
-                <input type="number" id="aco-rho" value="0.5" min="0.1" max="1.0" step="0.1">
-            </div>
-
-            <!-- GA Parameters -->
-            <div id="ga-params" class="algo-params" style="display: none;">
-                <label for="ga-population">种群大小:</label>
-                <input type="number" id="ga-population" value="50" min="10" max="500">
-                <label for="ga-generations">迭代次数:</label>
-                <input type="number" id="ga-generations" value="100" min="10" max="500">
-                <label for="ga-mutation">变异率:</label>
-                <input type="number" id="ga-mutation" value="0.1" min="0.01" max="0.2" step="0.01">
-                <label for="ga-crossover">交叉率:</label>
-                <input type="number" id="ga-crossover" value="0.8" min="0.1" max="1.0" step="0.1">
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button id="execute-btn" class="button">执行路径规划</button>
-            <button id="clear-btn" class="button secondary">清除结果</button>
-        </div>
-
-        <div class="results">
-            <h2>结果</h2>
-            <p>最短距离: <span id="best-distance">N/A</span></p>
-            <p>运行时间: <span id="execution-time">N/A</span></p>
-            <div id="chart-container" style="width:100%; height:600px;"></div>
-            <div id="routes-container">
-                <h3>路线详情</h3>
-                <ul id="routes-list"></ul>
+            <div class="sidebar">
+                <h2>算法介绍</h2>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header active">CVRP 问题简介</button>
+                        <div class="accordion-content" style="max-height: fit-content;">
+                            <p><strong>定义:</strong> 带容量约束的车辆路径问题 (Capacitated Vehicle Routing Problem, CVRP) 是指一定数量的客户有不同数量的货物需求，配送中心安排车辆向客户供货，并组织适当的行车路线，目标是找出最佳的路线，使得在满足所有客户需求和车辆容量限制的条件下，总行驶距离最短。</p>
+                            <p><strong>核心要素:</strong></p>
+                            <ul>
+                                <li><strong>仓库 (Depot):</strong> 所有路线的起点和终点。</li>
+                                <li><strong>客户 (Customers):</strong> 需要被服务的点，有各自的需求量。</li>
+                                <li><strong>车辆 (Vehicles):</strong> 每辆车有固定的最大载货容量。</li>
+                                <li><strong>约束 (Constraints):</strong>
+                                    <ul>
+                                        <li>每条路线的总需求量不能超过车辆容量。</li>
+                                        <li>每个客户必须被服务一次。</li>
+                                    </ul>
+                                </li>
+                                <li><strong>目标 (Objective):</strong> 最小化所有车辆行驶的总距离。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <button class="accordion-header">Clark-Wright 节省算法</button>
+                        <div class="accordion-content">
+                            <p><strong>来源:</strong> 由G. Clarke和J.W. Wright于1964年提出，是一种经典的启发式算法。</p>
+                            <p><strong>原理:</strong> 核心思想是“节省”。初始时，每个客户都由一辆专用车辆服务。然后，算法计算合并任意两条路线能节省的距离，并优先合并节省值最大的路线对。</p>
+                            <p><strong>运作过程:</strong></p>
+                            <ol>
+                                <li>为每个客户创建一条从仓库出发的独立路线。</li>
+                                <li>计算所有客户对 (i, j) 的节省值 S(i, j) = d(0, i) + d(0, j) - d(i, j)。</li>
+                                <li>将节省值从大到小排序。</li>
+                                <li>按顺序遍历节省值列表，若合并路线不违反车辆容量约束，则执行合并。</li>
+                                <li>重复直到没有更多可合并的路线。</li>
+                            </ol>
+                            <p><strong>适用场景:</strong> 适合求解中小型VRP问题，计算速度快，易于实现，能快速给出质量不错的解。</p>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <button class="accordion-header">蚁群优化 (ACO)</button>
+                        <div class="accordion-content">
+                            <p><strong>来源:</strong> 由Marco Dorigo于1992年提出，灵感来源于蚂蚁寻找食物的行为。</p>
+                            <p><strong>原理:</strong> 模拟蚂蚁通过释放“信息素”来寻找最短路径。蚂蚁倾向于选择信息素浓度更高的路径，而较短的路径信息素积累更快，形成正反馈，引导整个蚁群找到优解。</p>
+                            <p><strong>运作过程:</strong></p>
+                            <ol>
+                                <li>初始化所有路径上的信息素。</li>
+                                <li>让一组“蚂蚁”根据信息素浓度和距离概率性地构建路线。</li>
+                                <li>根据蚂蚁构建的路线总长度更新信息素，短路径获得更多信息素。</li>
+                                <li>所有路径上的信息素会以一定速率挥发。</li>
+                                <li>重复构建和更新过程，直到达到迭代次数。</li>
+                            </ol>
+                            <p><strong>适用场景:</strong> 适用于复杂的组合优化问题，鲁棒性好，能找到高质量的解，但计算成本相对较高。</p>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <button class="accordion-header">遗传算法 (GA)</button>
+                        <div class="accordion-content">
+                            <p><strong>来源:</strong> 基于达尔文的自然选择和遗传学原理，由John Holland在1970年代提出。</p>
+                            <p><strong>原理:</strong> 模拟生物进化过程，通过“选择”、“交叉”和“变异”等操作，使代表解的“种群”一代代进化，最终收敛到最优或次优解。</p>
+                            <p><strong>运作过程:</strong></p>
+                            <ol>
+                                <li>创建初始种群，每个“个体”是一套完整的VRP路线。</li>
+                                <li>根据总距离评估每个个体的“适应度”。</li>
+                                <li>选择适应度高的个体进行“交叉”（交换部分路线）以产生后代。</li>
+                                <li>对后代进行小概率的“变异”（如交换两个客户的顺序）。</li>
+                                <li>新产生的后代替换种群中适应度较低的个体。</li>
+                                <li>重复此过程，直到达到预设的代数。</li>
+                            </ol>
+                            <p><strong>适用场景:</strong> 强大的全局搜索能力，适合求解大规模、复杂的优化问题，但参数设置较为敏感，计算时间较长。</p>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <button class="accordion-header">最近邻启发式 (NNH)</button>
+                        <div class="accordion-content">
+                            <p><strong>来源:</strong> 一种非常直观和古老的贪心算法。</p>
+                            <p><strong>原理:</strong> 贪心策略。从一个点（通常是仓库）开始，总是选择离当前位置最近且尚未被访问的客户作为下一个访问点，直到车辆容量用尽或所有客户被服务。</p>
+                            <p><strong>运作过程:</strong></p>
+                            <ol>
+                                <li>从仓库开始一条新路线。</li>
+                                <li>找到离当前节点最近且未被访问的客户。</li>
+                                <li>如果将该客户加入当前路线不违反容量限制，则将其加入，并移动到该客户位置。</li>
+                                <li>如果容量不足，则返回仓库，开启一条新路线。</li>
+                                <li>重复此过程，直到所有客户都被分配到路线中。</li>
+                            </ol>
+                            <p><strong>适用场景:</strong> 算法非常简单快速，适合作为其他复杂算法的初始解生成器，或在对解的质量要求不高但对速度要求极高的场景。其解的质量通常不高。</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Include ECharts library -->
+    <!-- Include ECharts and SheetJS (for Excel export) libraries -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.3.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js', v=now) }}"></script>
 </body>
 </html>

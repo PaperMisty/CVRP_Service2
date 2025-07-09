@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const bestDistanceSpan = document.getElementById('best-distance');
     const executionTimeSpan = document.getElementById('execution-time');
     const chartContainer = document.getElementById('chart-container');
-    const routesList = document.getElementById('routes-list');
+    const routesTbody = document.getElementById('routes-tbody');
+    const exportBtn = document.getElementById('export-btn');
 
     // Global variables to hold the state
     let uploadedFile = null;
@@ -49,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearAlgorithmResults() {
         bestDistanceSpan.textContent = 'N/A';
         executionTimeSpan.textContent = 'N/A';
-        routesList.innerHTML = ''; // Clear route details
+        routesTbody.innerHTML = ''; // Clear route details
+        exportBtn.style.display = 'none'; // Hide export button
         // Show preview chart if available
         if (previewOptions && uploadedFile) {
             initializeChart();
@@ -184,14 +186,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 bestDistanceSpan.textContent = result.best_distance.toFixed(2);
                 executionTimeSpan.textContent = `${result.execution_time.toFixed(1)} s`;
 
-                // Display route details
-                routesList.innerHTML = '';
-                if (result.route_details) {
-                    result.route_details.forEach(route => {
-                        const li = document.createElement('li');
-                        li.textContent = `${route.name}: ${route.path}, Length: ${route.distance}, Cargo: ${route.cargo}`;
-                        routesList.appendChild(li);
+                // Display route details in the table
+                routesTbody.innerHTML = '';
+                if (result.route_details && result.route_details.length > 0) {
+                    result.route_details.forEach((route, index) => {
+                        const row = routesTbody.insertRow();
+                        row.insertCell(0).textContent = index + 1; // ID
+                        row.insertCell(1).textContent = route.path; // Route
+                        row.insertCell(2).textContent = route.distance; // Length
+                        row.insertCell(3).textContent = route.cargo; // Cargo
                     });
+                    exportBtn.style.display = 'inline-block'; // Show export button
+                } else {
+                    exportBtn.style.display = 'none'; // Hide if no routes
                 }
                 
                 // Parse chart options
@@ -278,5 +285,52 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('“迭代次数”不能大于 500。');
             gaGenerationsInput.value = 500;
         }
+    });
+
+    // Export to Excel functionality
+    exportBtn.addEventListener('click', () => {
+        const table = document.getElementById('routes-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Route Details" });
+        XLSX.writeFile(wb, "route_details.xlsx");
+    });
+
+    // Accordion functionality
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+    
+    // Function to open a specific accordion item
+    function openAccordion(header) {
+        const content = header.nextElementSibling;
+        header.classList.add('active');
+        content.style.maxHeight = content.scrollHeight + 'px';
+    }
+
+    // Function to close a specific accordion item
+    function closeAccordion(header) {
+        const content = header.nextElementSibling;
+        header.classList.remove('active');
+        content.style.maxHeight = null;
+    }
+
+    // Set the first item to be open by default
+    if (accordionHeaders.length > 0) {
+        const firstHeader = accordionHeaders[0];
+        // We need to set the maxHeight to its scrollHeight to make it visible
+        // The class 'active' is already set in the HTML
+        const firstContent = firstHeader.nextElementSibling;
+        firstContent.style.maxHeight = firstContent.scrollHeight + 'px';
+    }
+
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const isActive = header.classList.contains('active');
+            
+            // Close all accordions
+            accordionHeaders.forEach(h => closeAccordion(h));
+
+            // If the clicked header was not active, open it
+            if (!isActive) {
+                openAccordion(header);
+            }
+        });
     });
 });

@@ -1,70 +1,73 @@
-# CVRP (Capacitated Vehicle Routing Problem) Solver with Web Interface
+# CVRP (带容量约束的车辆路径问题) 求解器与Web界面
 
-This project provides a set of algorithms to solve the Capacitated Vehicle Routing Problem (CVRP) and a web-based user interface to interact with them. Users can upload an Excel file containing customer location and demand data, choose a solving algorithm, and visualize the resulting delivery routes.
+本项目提供了一套解决带容量约束的车辆路径问题 (CVRP) 的算法，并配备了一个基于Web的用户界面与之交互。用户可以上传包含客户位置和需求数据的Excel文件，选择求解算法，并可视化最终的配送路线。
 
-## Project Structure
+## 项目结构
 
 ```
 .
-├── algorithm/                # Contains the core CVRP algorithms
-│   ├── Clark_Wright.py       # Clark-Wright Savings algorithm
-│   ├── IC.py                 # Improvement heuristic (local search)
-│   ├── ACO_VRP.py            # (Placeholder) Ant Colony Optimization
-│   ├── GA_VRP.py             # (Placeholder) Genetic Algorithm
-│   ├── NNH_VRP.py            # (Placeholder) Nearest Neighbor Heuristic
-│   └── ...
-├── data/                     # Contains example data files
-│   └── location_... .xlsx
-├── web_app/                  # Contains the Flask web application
+├── algorithm/                # 包含核心CVRP算法
+│   ├── Clark_Wright.py       # Clark-Wright 节省算法
+│   ├── ACO_VRP.py            # 蚁群优化 (Ant Colony Optimization) 算法
+│   ├── GA_VRP.py             # 遗传算法 (Genetic Algorithm)
+│   ├── NNH_VRP.py            # 最近邻启发式 (Nearest Neighbor Heuristic) 算法
+│   └── IC.py                 # 禁忌搜索/局部搜索改进启发式
+├── web_app/                  # 包含Flask Web应用程序
 │   ├── static/
-│   │   ├── css/style.css     # Styles for the web interface
-│   │   └── js/script.js      # Frontend logic for interactivity
+│   │   ├── css/style.css     # Web界面样式文件
+│   │   └── js/script.js      # 前端交互逻辑
 │   ├── templates/
-│   │   └── index.html        # Main HTML page for the UI
-│   └── app.py                # Flask backend server
-└── README.md                 # This file
+│   │   └── index.html        # UI主页面
+│   └── app.py                # Flask后端服务器
+└── README.md                 # 本文档
 ```
 
-## Features
+## 功能特性
 
-- **File Upload:** Users can drag-and-drop or select an Excel file with customer data.
-- **Algorithm Selection:** A dropdown menu allows users to choose which CVRP algorithm to run. (Currently, only Clark-Wright Savings is fully integrated).
-- **Dynamic Visualization:** The application uses the Pyecharts library to generate interactive charts.
-  - **Preview:** Immediately after uploading a file, a scatter plot shows the distribution of customers, with bubble size and color corresponding to demand.
-  - **Solution:** After running an algorithm, the chart displays the optimized delivery routes, with each route shown in a different color.
-- **Interactive Tooltips:** Hovering over a customer node displays its ID and demand.
+- **文件上传:** 用户可以拖放或选择一个包含客户数据的Excel文件。
+- **算法选择:** 下拉菜单允许用户选择运行以下CVRP算法：
+  - Clark-Wright 节省算法
+  - 蚁群优化 (ACO)
+  - 遗传算法 (GA)
+  - 最近邻启发式 (NNH)
+- **解的优化:** 所有初始解都会通过一个改进算法（局部搜索）进行优化，以获得更好的结果。
+- **动态可视化:** 应用使用 Pyecharts 库生成交互式图表。
+  - **数据预览:** 上传文件后，立即显示客户分布的散点图，其中气泡大小和颜色对应其需求量。
+  - **解决方案:** 运行算法后，图表会显示优化后的配送路线，每条路线以不同颜色区分。
+- **交互式提示:** 鼠标悬停在客户节点上时，会显示其ID和需求量。
+- **结果分析:** 显示求解得到的总距离、计算耗时以及每条路线的详细信息（路径、距离、载货量）。
 
-## How to Run
+## 如何运行
 
-### 1. Prerequisites
+### 1. 环境要求
 
 - Python 3.x
-- pip (Python package installer)
+- pip (Python包安装器)
 
-### 2. Installation
+### 2. 安装依赖
 
-Clone the repository and navigate to the project directory. Then, install the required Python packages:
+克隆本仓库，进入项目目录，然后安装所需的Python包：
 
 ```bash
 pip install flask pandas numpy openpyxl pyecharts
 ```
 
-### 3. Running the Application
+### 3. 运行应用
 
-Once the dependencies are installed, you can start the Flask web server by running:
+安装完依赖后，通过运行以下命令启动Flask Web服务器：
 
 ```bash
 python web_app/app.py
 ```
 
-The server will start, and you can access the web interface by navigating to the following URL in your web browser:
+服务器启动后，在你的浏览器中访问以下URL即可打开Web界面：
 
 [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-### 4. Using the Interface
+### 4. 使用界面
 
-1.  **Upload Data:** Drag and drop an Excel file onto the designated area, or click "Select File" to browse for it.
-2.  **Format:** The Excel file must contain columns named `longitude`, `latitude`, and `demand`. The first row (index 0) is treated as the depot.
-3.  **Select Algorithm:** Choose an algorithm from the dropdown menu.
-4.  **Set Capacity:** Enter the vehicle capacity.
-5.  **Execute:** Click the "Execute" button to run the algorithm and visualize the solution.
+1.  **上传数据:** 将Excel文件拖放到指定区域，或点击“选择文件”进行浏览。
+2.  **文件格式:** Excel文件必须包含名为 `longitude` (经度), `latitude` (纬度), 和 `demand` (需求) 的列。第一行 (索引为0) 的数据被视作仓库。
+3.  **选择算法:** 从下拉菜单中选择一个算法。
+4.  **设置参数:** 输入车辆容量，并可为特定算法（如ACO和GA）配置高级参数。
+5.  **执行求解:** 点击“执行”按钮运行算法并可视化解决方案。
