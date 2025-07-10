@@ -11,14 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const bestDistanceSpan = document.getElementById('best-distance');
     const executionTimeSpan = document.getElementById('execution-time');
     const chartContainer = document.getElementById('chart-container');
+    const heatmapContainer = document.getElementById('heatmap-container');
     const routesTbody = document.getElementById('routes-tbody');
     const exportBtn = document.getElementById('export-btn');
+    const exportHeatmapBtn = document.getElementById('export-heatmap-btn');
+    const exportChartBtn = document.getElementById('export-chart-btn');
 
     // Global variables to hold the state
     let uploadedFile = null;
     let myChart = null;
+    let heatmapChart = null;
     let timerInterval = null;
     let previewOptions = null; // Store preview chart options
+    let currentDistanceMatrix = null; // Store the distance matrix
 
     /**
      * Initialize or reinitialize the chart
@@ -28,9 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
             myChart.dispose();
             myChart = null;
         }
-        // Clear the container
+        if (heatmapChart) {
+            heatmapChart.dispose();
+            heatmapChart = null;
+        }
+        // Clear the containers
         chartContainer.innerHTML = '';
+        heatmapContainer.innerHTML = '';
         myChart = echarts.init(chartContainer);
+        heatmapChart = echarts.init(heatmapContainer);
     }
 
     /**
@@ -52,6 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
         executionTimeSpan.textContent = 'N/A';
         routesTbody.innerHTML = ''; // Clear route details
         exportBtn.style.display = 'none'; // Hide export button
+        exportHeatmapBtn.style.display = 'none'; // Hide heatmap export button
+        exportChartBtn.style.display = 'none'; // Hide chart export button
+        currentDistanceMatrix = null;
         // Show preview chart if available
         if (previewOptions && uploadedFile) {
             initializeChart();
@@ -216,7 +230,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Set the new options
                 myChart.setOption(chartOptions, true); // true means not merge, replace completely
+                exportChartBtn.style.display = 'inline-block'; // Show chart export button
                 console.log('Chart set successfully');
+
+                // Render heatmap if distance matrix is available
+                if (result.distance_matrix) {
+                    currentDistanceMatrix = JSON.parse(result.distance_matrix);
+                    renderHeatmap(currentDistanceMatrix);
+                    exportHeatmapBtn.style.display = 'inline-block';
+                } else {
+                    exportHeatmapBtn.style.display = 'none';
+                    currentDistanceMatrix = null;
+                }
                 
             } else {
                 console.error('Algorithm failed:', result.error);
@@ -293,6 +318,90 @@ document.addEventListener('DOMContentLoaded', () => {
         const wb = XLSX.utils.table_to_book(table, { sheet: "Route Details" });
         XLSX.writeFile(wb, "route_details.xlsx");
     });
+
+    exportHeatmapBtn.addEventListener('click', () => {
+        if (currentDistanceMatrix) {
+            const ws = XLSX.utils.aoa_to_sheet(currentDistanceMatrix);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Distance Matrix");
+            XLSX.writeFile(wb, "distance_matrix.xlsx");
+        }
+    });
+
+    exportChartBtn.addEventListener('click', () => {
+        if (myChart) {
+            const url = myChart.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                backgroundColor: '#fff'
+            });
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cvrp_solution_chart.png';
+            a.click();
+        }
+    });
+
+    function renderHeatmap(matrix) {
+        const data = [];
+        let maxDist = 0;
+        for (let i = 0; i < matrix.length; i++) {
+            for (let j = 0; j < matrix[i].length; j++) {
+                data.push([i, j, matrix[i][j].toFixed(2)]);
+                if (matrix[i][j] > maxDist) {
+                    maxDist = matrix[i][j];
+                }
+            }
+        }
+
+        const option = {
+            tooltip: {
+                position: 'top',
+                formatter: params => `From ${params.value[0]} to ${params.value[1]}: ${params.value[2]} km`
+            },
+            grid: {
+                height: '80%',
+                top: '10%'
+            },
+            xAxis: {
+                type: 'category',
+                data: Array.from({ length: matrix.length }, (_, i) => i),
+                splitArea: {
+                    show: true
+                }
+            },
+            yAxis: {
+                type: 'category',
+                data: Array.from({ length: matrix.length }, (_, i) => i),
+                splitArea: {
+                    show: true
+                }
+            },
+            visualMap: {
+                min: 0,
+                max: maxDist,
+                calculable: true,
+                orient: 'vertical',
+                left: 'right',
+                top: 'center'
+            },
+            series: [{
+                name: 'Distance',
+                type: 'heatmap',
+                data: data,
+                label: {
+                    show: matrix.length < 20 // Only show labels for small matrices
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }]
+        };
+        heatmapChart.setOption(option);
+    }
 
     // Accordion functionality
     const accordionHeaders = document.querySelectorAll('.accordion-header');

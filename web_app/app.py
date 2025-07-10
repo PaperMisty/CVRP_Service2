@@ -125,7 +125,6 @@ def create_route_chart(df, child_paths, title):
     # 构建完整的图表配置 - 每次都创建全新的配置对象
     option = {
         "animation": False,  # 禁用动画避免状态混乱
-        "title": {"text": title},
         "tooltip": {"trigger": "item"},
         "legend": {
             "data": legend_data,
@@ -379,7 +378,8 @@ def upload_and_solve():
                 "best_distance": best_distance,
                 "execution_time": execution_time,
                 "chart_options": chart_options,
-                "route_details": route_details
+                "route_details": route_details,
+                "distance_matrix": json.dumps(distance_matrix.tolist())
             })
         except Exception as e:
             import traceback

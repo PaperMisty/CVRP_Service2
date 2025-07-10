@@ -220,3 +220,31 @@ h2 {
 #routes-table tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
+
+.chart-section, .heatmap-section, .routes-section {
+    position: relative;
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.chart-header, .heatmap-header, .routes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chart-header h3, .heatmap-header h3, .routes-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+#export-heatmap-btn, #export-chart-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10;
+}
