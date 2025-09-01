@@ -40,7 +40,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 # 计算距离矩阵，默认使用欧氏距离
-def calculate_distance_matrix(data, distance_type='euclidean'):
+def calculate_distance_matrix(data, distance_type='euclidean')->np.ndarray:
     """
     计算所有点之间的距离矩阵
     :param data: 包含经纬度信息的DataFrame

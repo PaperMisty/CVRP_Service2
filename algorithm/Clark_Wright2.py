@@ -35,7 +35,13 @@ class CVRP_CW:
                     self.savings[i][j] = (self.distance_matrix[0][i] + 
                                         self.distance_matrix[0][j] - 
                                         self.distance_matrix[i][j])
+        # 保存节约值矩阵
+        print(self.savings)
+        index_labels = list(range(0, len(self.savings)))
+        # 使用 pandas.DataFrame() 的 index 和 columns 参数直接指定索引
+        self.savings = pd.DataFrame(self.savings,index=index_labels,columns=index_labels)
 
+        self.savings.to_excel('output/savings_matrix.xlsx')
     def is_feasible(self, route, i, j):
         """检查合并路径是否满足容量约束"""
         total_demand = 0
@@ -51,9 +57,10 @@ class CVRP_CW:
     def merge_routes(self, route1, route2, i, j):
         """
         合并两条路径，连接i和j
-        route1: 包含i的路径
-        route2: 包含j的路径
-        i, j: 正在考虑连接的两个客户点
+        :param route1: 包含i的路径
+        :param route2: 包含j的路径
+        :param i: 正在考虑连接的客户点i
+        :param j: 正在考虑连接的客户点j
         """
         # 确定i在route1中的位置 (第二个元素或倒数第二个元素)
         i_is_start_of_route1 = (route1[1] == i)
@@ -65,24 +72,24 @@ class CVRP_CW:
 
         merged_route = None
 
-        # Case 1: route1 ends with i, route2 starts with j
+        # 情况1: route1以i结尾，route2以j开头
         # [0, ..., i, 0] + [0, j, ...] -> [0, ..., i, j, ...]
         if i_is_end_of_route1 and j_is_start_of_route2:
             merged_route = route1[:-1] + route2[1:]
-        # Case 2: route1 starts with i, route2 starts with j
-        # [0, i, ..., 0] + [0, j, ...] -> [0, ..., i, j, ...] (route1 reversed)
+        # 情况2: route1以i开头，route2以j开头
+        # [0, i, ..., 0] + [0, j, ...] -> [0, ..., i, j, ...] (route1反转)
         elif i_is_start_of_route1 and j_is_start_of_route2:
             merged_route = route1[::-1][:-1] + route2[1:]
-        # Case 3: route1 ends with i, route2 ends with j
-        # [0, ..., i, 0] + [0, ..., j, 0] -> [0, ..., i, j, ..., 0] (route2 reversed)
+        # 情况3: route1以i结尾，route2以j结尾
+        # [0, ..., i, 0] + [0, ..., j, 0] -> [0, ..., i, j, ..., 0] (route2反转)
         elif i_is_end_of_route1 and j_is_end_of_route2:
             merged_route = route1[:-1] + route2[::-1][1:]
-        # Case 4: route1 starts with i, route2 ends with j
-        # [0, i, ..., 0] + [0, ..., j, 0] -> [0, ..., i, j, ..., 0] (route1 reversed, route2 reversed)
+        # 情况4: route1以i开头，route2以j结尾
+        # [0, i, ..., 0] + [0, ..., j, 0] -> [0, ..., i, j, ..., 0] (route1反转, route2反转)
         elif i_is_start_of_route1 and j_is_end_of_route2:
             merged_route = route1[::-1][:-1] + route2[::-1][1:]
 
-        # Ensure the merged route starts and ends with depot (0)
+        # 确保合并后的路径以配送中心(0)开头和结尾
         if merged_route and merged_route[0] == 0 and merged_route[-1] == 0:
             return merged_route
         return None
@@ -157,25 +164,20 @@ class CVRP_CW:
 if __name__ == "__main__":
     a = time.time()
     # 读取数据
-    data = pd.read_excel('data/location_中百仓储_武汉市.xlsx')
+    data = pd.read_excel('web_app/static/download/location_中百仓储_武汉市.xlsx')
     data["longitude"] = data["longitude"].astype(float)
     data["latitude"] = data["latitude"].astype(float)
     data["demand"] = data["demand"].astype(float)
 
-    cw = CVRP_CW(data=data, capacity=4)
+    cw = CVRP_CW(data=data, capacity=20)
     best_path, best_distance, distance_matrix = cw.run()
-    print("CW最短距离：", best_distance)
-    print("CW最短路径：", best_path)
-
-    b = time.time()
-    print("CW运行时间：", b-a)
 
     ic = IC.IC(distance_matrix, best_path)
     ic.split_path()
     child_paths, best_distance = ic.improve()
     print("CW-IC最短距离：", best_distance)
     print("CW-IC最短路径：", child_paths)
-    c = time.time()
-    print("IC运行时间：", c-b)
+    b = time.time()
+    print("运行时间：", b-a)
 
-    draw_figure(data, child_paths, cw.figure_title)
+    draw_figure(data, child_paths, demands=data["demand"], figure_title="CW-IC")

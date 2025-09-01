@@ -1,8 +1,11 @@
-# 导入必要的库
+# 内部distance计算有问题
 import numpy as np
+import pandas as pd
 import time
 from algorithm import IC
 from algorithm.calcDist import calculate_distance_matrix
+from matplotlib import pyplot as plt
+import algorithm.drawFigure as drawFigure
 
 class CVRP_ACO:
     def __init__(self, data, num_ants, num_iterations, alpha, beta, rho, capacity, distance_type='haversine', figure_title="Accelerated ACO"):
@@ -24,6 +27,9 @@ class CVRP_ACO:
         
         self.best_path = None
         self.best_distance = float('inf')
+        # self.child_paths用于解的形式转换，适配IC接入
+        self.child_paths = []
+        self.history_best_distance = []
 
     def run(self):
         for _ in range(self.num_iterations):
@@ -79,7 +85,11 @@ class CVRP_ACO:
                 # 更新全局最优解
                 if all_distances[ant] < self.best_distance:
                     self.best_distance = all_distances[ant]
+                    self.history_best_distance.append(self.best_distance)
                     self.best_path = path
+                # 若暂时收敛，则延续当前最优解
+                else:
+                    self.history_best_distance.append(self.history_best_distance[-1])
 
             # 更新信息素（向量化）
             self.pheromone *= (1 - self.rho) # 信息素挥发
@@ -89,32 +99,38 @@ class CVRP_ACO:
                     # 仅为最优路径增加信息素（精英蚂蚁策略）
                     self.pheromone[start, end] += 1.0 / self.best_distance
                     self.pheromone[end, start] = self.pheromone[start, end] # 对称矩阵
-
-        return self.best_path, self.best_distance, self.distance_matrix
+            # print("best_path:", best_path)
+        # 给best_path按0分割列表，符合IC算法接入格式
+        temp = []
+        for x in self.best_path:
+            temp.append(x)
+            if x == 0 and len(temp) > 1:  # 碰到 0 且 temp 已经不是空
+                self.child_paths.append(temp)
+                temp = [0]  # 新的一段从 0 开始
+        return self.child_paths, self.best_distance, self.distance_matrix, self.history_best_distance
 
 if __name__ == "__main__":
-    # 示例用法
-    data_dict = {
-        'longitude': np.random.rand(20) * 100,
-        'latitude': np.random.rand(20) * 100,
-        'demand': np.random.randint(1, 10, 20)
-    }
-    import pandas as pd
-    data = pd.DataFrame(data_dict)
-    data.iloc[0]['demand'] = 0 # 仓库需求为0
+    a = time.time()
+    # 读取数据
+    data = pd.read_excel('web_app/static/download/location_中百仓储_武汉市.xlsx')
+    data["longitude"] = data["longitude"].astype(float)
+    data["latitude"] = data["latitude"].astype(float)
+    data["demand"] = data["demand"].astype(float)
 
     start_time = time.time()
-    aco = CVRP_ACO(data=data, num_ants=20, num_iterations=100, alpha=1.0, beta=5.0, rho=0.5, capacity=50)
-    best_path, best_distance, distance_matrix = aco.run()
-    end_time = time.time()
-
-    print(f"Accelerated ACO finished in {end_time - start_time:.2f}s")
-    print("Best distance:", best_distance)
+    aco = CVRP_ACO(data=data, num_ants=20, num_iterations=100, alpha=1.0, beta=5.0, rho=0.5, capacity=20)
+    child_paths, best_distance, distance_matrix, history_best_distance = aco.run()
+    print("Routes:", child_paths)
+    # IC算法优化
+    ic_solver = IC.IC(distance_matrix=distance_matrix, child_paths=child_paths)
+    child_paths, improved_distance = ic_solver.improve()
+    print("Routes:", child_paths)
     
-    # 使用IC进行改进
-    if best_path:
-        ic_solver = IC.IC(distance_matrix, best_path)
-        ic_solver.split_path()
-        child_paths, improved_distance = ic_solver.improve()
-        print("Improved distance with IC:", improved_distance)
-        print("Routes:", child_paths)
+    end_time = time.time()
+    print("Time taken:", end_time - start_time)
+    
+    # 绘制收敛曲线图
+    drawFigure.convergence_curve(history_best_distance=history_best_distance)
+
+    # 绘制路径图
+    drawFigure.route_figure(data, child_paths, data["demand"], "ACO-IC Routes")
