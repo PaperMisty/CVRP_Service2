@@ -1,12 +1,13 @@
 [build]
-  publish = "public"
-  functions = "netlify/functions"
+  # 如果是纯 Python API（FastAPI/Flask 等），可以不需要 build 命令
+  command = ""
+  publish = "."                    # 或你的静态文件目录
+  functions = "netlify/functions"  # 把你的 .py 函数文件放在这个文件夹里
 
-[functions]
-  node_bundler = "esbuild"
-  # Python functions settings
-  python_version = "3.9"
+  # 设置 Python 版本
+  environment = { PYTHON_VERSION = "3.11" }
 
+# 可选：重定向所有 API 请求到函数（常见做法）
 [[redirects]]
   from = "/preview_data"
   to = "/.netlify/functions/api"
