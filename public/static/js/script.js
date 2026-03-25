@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let timerInterval = null;
     let previewOptions = null; // Store preview chart options
     let currentDistanceMatrix = null; // Store the distance matrix
+    let currentData = null; // Store the parsed Excel data
 
     /**
      * Initialize or reinitialize the chart
@@ -93,31 +94,81 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Sends the uploaded file to the backend to get a preview chart.
+     * Parsing the Excel file locally and creating a preview.
      * @param {File} file - The uploaded Excel file.
      */
     async function previewData(file) {
-        const formData = new FormData();
-        formData.append('file', file);
         try {
-            const response = await fetch('/preview_data', { method: 'POST', body: formData });
-            const result = await response.json();
-            if (result.success) {
-                // Parse the JSON string of chart options from the backend
-                const chartOptions = JSON.parse(result.chart_options);
-                previewOptions = chartOptions; // Store for later use
-                console.log('Preview chart options:', chartOptions);
-                // Initialize chart and set options
-                initializeChart();
-                myChart.setOption(chartOptions, true);
-            } else {
-                console.error('Preview failed:', result.error);
-                alert('数据预览失败: ' + result.error);
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            // Robust Mapping: Identify columns by common names
+            const findColumn = (obj, possibleNames) => {
+                const keys = Object.keys(obj);
+                for (const name of possibleNames) {
+                    const match = keys.find(k => k.toLowerCase().includes(name.toLowerCase()));
+                    if (match) return match;
+                }
+                return null;
+            };
+
+            const firstRow = jsonData[0];
+            const lonCol = findColumn(firstRow, ['longitude', 'lon', '经度', 'lng']);
+            const latCol = findColumn(firstRow, ['latitude', 'lat', '纬度']);
+            const demCol = findColumn(firstRow, ['demand', '需求', 'weight', 'cargo']);
+
+            if (!lonCol || !latCol) {
+                throw new Error('Excel 文件格式错误：未找到经纬度列（longitude/latitude）。');
             }
+
+            currentData = jsonData.map((row, index) => ({
+                id: index,
+                longitude: parseFloat(row[lonCol]),
+                latitude: parseFloat(row[latCol]),
+                demand: demCol ? parseFloat(row[demCol] || 0) : 0
+            }));
+
+            // Filter out invalid rows
+            currentData = currentData.filter(d => !isNaN(d.longitude) && !isNaN(d.latitude));
+            
+            if (currentData.length === 0) throw new Error('Excel 文件中没有有效的坐标数据。');
+
+            console.log('Parsed data:', currentData);
+
+            // Create preview chart options manually (mimicking backend create_route_chart)
+            const chartOptions = createPreviewOptions(currentData);
+            previewOptions = chartOptions;
+
+            initializeChart();
+            myChart.setOption(chartOptions, true);
         } catch (error) {
-            console.error('Preview request failed:', error);
-            alert('数据预览请求失败: ' + error.message);
+            console.error('Local preview failed:', error);
+            alert('数据解析失败: ' + error.message);
         }
+    }
+
+    function createPreviewOptions(data) {
+        return {
+            title: { text: "CVRP Data Preview" },
+            tooltip: { trigger: 'item' },
+            xAxis: { type: 'value', scale: true, name: 'Longitude' },
+            yAxis: { type: 'value', scale: true, name: 'Latitude' },
+            series: [{
+                type: 'scatter',
+                data: data.map(d => [d.longitude, d.latitude]),
+                symbolSize: 10,
+                itemStyle: {
+                    color: (params) => params.dataIndex === 0 ? '#ff0000' : '#007bff'
+                },
+                label: {
+                    show: true,
+                    formatter: (params) => data[params.dataIndex].id + (data[params.dataIndex].demand > 0 ? `|${data[params.dataIndex].demand}` : '')
+                }
+            }]
+        };
     }
 
     /**
@@ -188,78 +239,129 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
         try {
-            const response = await fetch('/upload_and_solve', { method: 'POST', body: formData });
-            const result = await response.json();
+            // Local calculation starts here
+            const capacity = parseInt(capacityInput.value, 10);
+            const algorithm = algorithmSelect.value;
+            const params = {};
+
+            if (algorithm === 'ACO') {
+                params.ants = parseInt(document.getElementById('aco-ants').value, 10);
+                params.iterations = parseInt(document.getElementById('aco-iterations').value, 10);
+                params.alpha = parseFloat(document.getElementById('aco-alpha').value);
+                params.beta = parseFloat(document.getElementById('aco-beta').value);
+                params.rho = parseFloat(document.getElementById('aco-rho').value);
+            } else if (algorithm === 'GA') {
+                params.population = parseInt(document.getElementById('ga-population').value, 10);
+                params.generations = parseInt(document.getElementById('ga-generations').value, 10);
+                params.mutation = parseFloat(document.getElementById('ga-mutation').value);
+                params.crossover = parseFloat(document.getElementById('ga-crossover').value);
+            }
+
+            // Small delay to allow UI to update (spinner)
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const solver = new CVRP_Algorithms(currentData, capacity);
+            const result = solver.solve(algorithm, params);
             
-            console.log('Algorithm response:', result);
+            console.log('Local calculation result:', result);
 
             // Stop the timer
             clearInterval(timerInterval);
+            const endTime = Date.now();
+            const executionTime = (endTime - startTime) / 1000;
+            executionTimeSpan.textContent = `${executionTime.toFixed(1)} s`;
+
+            bestDistanceSpan.textContent = result.best_distance.toFixed(2);
+
+            // Display route details in the table
+            routesTbody.innerHTML = '';
+            const routeDetails = calculateRouteDetails(result.child_paths, result.distance_matrix, currentData);
             
-            if (result.success) {
-                bestDistanceSpan.textContent = result.best_distance.toFixed(2);
-                executionTimeSpan.textContent = `${result.execution_time.toFixed(1)} s`;
+            routeDetails.forEach((route, index) => {
+                const row = routesTbody.insertRow();
+                row.insertCell(0).textContent = index + 1; // ID
+                row.insertCell(1).textContent = route.path; // Route
+                row.insertCell(2).textContent = route.distance.toFixed(2); // Length
+                row.insertCell(3).textContent = route.cargo.toFixed(2); // Cargo
+            });
+            exportBtn.style.display = 'inline-block';
 
-                // Display route details in the table
-                routesTbody.innerHTML = '';
-                if (result.route_details && result.route_details.length > 0) {
-                    result.route_details.forEach((route, index) => {
-                        const row = routesTbody.insertRow();
-                        row.insertCell(0).textContent = index + 1; // ID
-                        row.insertCell(1).textContent = route.path; // Route
-                        row.insertCell(2).textContent = route.distance; // Length
-                        row.insertCell(3).textContent = route.cargo; // Cargo
-                    });
-                    exportBtn.style.display = 'inline-block'; // Show export button
-                } else {
-                    exportBtn.style.display = 'none'; // Hide if no routes
-                }
-                
-                // Parse chart options
-                let chartOptions;
-                if (typeof result.chart_options === 'string') {
-                    chartOptions = JSON.parse(result.chart_options);
-                } else {
-                    chartOptions = result.chart_options;
-                }
-                
-                console.log('Final chart options:', chartOptions);
-                
-                // Completely reinitialize chart to avoid any state accumulation
-                initializeChart();
-                
-                // Set the new options
-                myChart.setOption(chartOptions, true); // true means not merge, replace completely
-                exportChartBtn.style.display = 'inline-block'; // Show chart export button
-                console.log('Chart set successfully');
+            // Generate chart options for the solution
+            const chartOptions = createSolutionOptions(currentData, result.child_paths, `CVRP Solution - ${algorithm}`);
+            
+            initializeChart();
+            myChart.setOption(chartOptions, true);
+            exportChartBtn.style.display = 'inline-block';
 
-                // Render heatmap if distance matrix is available
-                if (result.distance_matrix) {
-                    currentDistanceMatrix = JSON.parse(result.distance_matrix);
-                    renderHeatmap(currentDistanceMatrix);
-                    exportHeatmapBtn.style.display = 'inline-block';
-                } else {
-                    exportHeatmapBtn.style.display = 'none';
-                    currentDistanceMatrix = null;
-                }
-                
-            } else {
-                console.error('Algorithm failed:', result.error);
-                alert('算法执行失败: ' + result.error);
-                bestDistanceSpan.textContent = '错误';
-                executionTimeSpan.textContent = '错误';
-            }
+            // Render heatmap
+            currentDistanceMatrix = result.distance_matrix;
+            renderHeatmap(currentDistanceMatrix);
+            exportHeatmapBtn.style.display = 'inline-block';
+            
         } catch (error) {
-            console.error('Algorithm request failed:', error);
-            alert('请求失败: ' + error.message);
+            console.error('Calculation failed:', error);
+            alert('计算失败: ' + error.message);
             bestDistanceSpan.textContent = '错误';
             executionTimeSpan.textContent = '错误';
+            clearInterval(timerInterval);
         } finally {
-            // Re-enable buttons
             executeBtn.disabled = false;
             clearBtn.disabled = false;
             executeBtn.textContent = '执行路径规划';
         }
+    }
+
+    function calculateRouteDetails(routes, matrix, data) {
+        return routes.map(route => {
+            let dist = 0;
+            let cargo = 0;
+            for (let i = 0; i < route.length - 1; i++) {
+                dist += matrix[route[i]][route[i+1]];
+                if (route[i] !== 0) cargo += data[route[i]].demand;
+            }
+            return {
+                path: route.join(' → '),
+                distance: dist,
+                cargo: cargo
+            };
+        });
+    }
+
+    function createSolutionOptions(data, routes, title) {
+        const series = [{
+            type: 'scatter',
+            data: data.map(d => [d.longitude, d.latitude]),
+            symbolSize: 10,
+            itemStyle: {
+                color: (params) => params.dataIndex === 0 ? '#ff0000' : '#007bff'
+            },
+            label: {
+                show: true,
+                formatter: (params) => data[params.dataIndex].id
+            },
+            zIndex: 10
+        }];
+
+        routes.forEach((route, index) => {
+            const lineData = route.map(nodeIdx => [data[nodeIdx].longitude, data[nodeIdx].latitude]);
+            series.push({
+                type: 'line',
+                data: lineData,
+                smooth: false,
+                lineStyle: { width: 2, opacity: 0.8 },
+                symbol: 'none',
+                name: `Route ${index + 1}`
+            });
+        });
+
+        return {
+            title: { text: title },
+            tooltip: { trigger: 'item' },
+            legend: { show: false },
+            xAxis: { type: 'value', scale: true },
+            yAxis: { type: 'value', scale: true },
+            series: series
+        };
     }
 
     // Event Listeners
