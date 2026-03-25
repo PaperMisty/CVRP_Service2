@@ -1,0 +1,29 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  # Python functions settings
+  python_version = "3.9"
+
+[[redirects]]
+  from = "/preview_data"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/upload_and_solve"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/download/*"
+  to = "/static/download/:splat"
+  status = 200
+
+# Handle all other routes by the function (if any)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

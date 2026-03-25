@@ -2,9 +2,9 @@
 import numpy as np
 import pandas as pd
 import time
-from algorithm import IC
-from algorithm.calcDist import calculate_distance_matrix
-from algorithm.drawFigure import draw_figure
+from . import IC
+from .calcDist import calculate_distance_matrix
+from .drawFigure import route_figure
 
 class CVRP_CW:
     def __init__(self, data, capacity, distance_type='haversine', figure_title="武汉中百仓储超市物流配送方案-CW"):
@@ -172,12 +172,11 @@ if __name__ == "__main__":
     cw = CVRP_CW(data=data, capacity=20)
     best_path, best_distance, distance_matrix = cw.run()
 
-    ic = IC.IC(distance_matrix, best_path)
-    ic.split_path()
+    ic = IC.IC(distance_matrix, cw.routes)
     child_paths, best_distance = ic.improve()
     print("CW-IC最短距离：", best_distance)
     print("CW-IC最短路径：", child_paths)
     b = time.time()
     print("运行时间：", b-a)
 
-    draw_figure(data, child_paths, demands=data["demand"], figure_title="CW-IC")
+    route_figure(data, child_paths, demands=data["demand"], figure_title=cw.figure_title)

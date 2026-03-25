@@ -146,13 +146,8 @@ class CVRP_CW:
         total_distance = sum(self.calculate_route_distance(route) for route in self.routes)
         self.best_distance = total_distance
         
-        # 将所有路径合并为一条路径(为了与其他算法格式统一)
-        best_path = []
-        for route in self.routes:
-            best_path.extend(route[:-1])
-        best_path.append(0)
-        
-        return best_path, self.best_distance, self.distance_matrix
+        # 返回嵌套路径格式
+        return self.routes, self.best_distance, self.distance_matrix
 
 if __name__ == "__main__":
     a = time.time()
@@ -163,15 +158,14 @@ if __name__ == "__main__":
     data["demand"] = data["demand"].astype(float)
 
     cw = CVRP_CW(data=data, capacity=4)
-    best_path, best_distance, distance_matrix = cw.run()
+    child_paths, best_distance, distance_matrix = cw.run()
     print("CW最短距离：", best_distance)
-    print("CW最短路径：", best_path)
+    print("CW最短路径：", child_paths)
 
     b = time.time()
     print("CW运行时间：", b-a)
 
-    ic = IC.IC(distance_matrix, best_path)
-    ic.split_path()
+    ic = IC.IC(distance_matrix, child_paths)
     child_paths, best_distance = ic.improve()
     print("CW-IC最短距离：", best_distance)
     print("CW-IC最短路径：", child_paths)

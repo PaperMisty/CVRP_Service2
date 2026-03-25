@@ -8,3 +8,6 @@ openpyxl>=3.0.0   # Excel文件支持
 
 # 可视化
 pyecharts>=2.0.0
+
+# Serverless 适配器 (Netlify)
+aws-lambda-wsgi

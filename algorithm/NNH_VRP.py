@@ -67,21 +67,8 @@ class CVRP_NNH:
         # 计算总距离
         distance = 0
         
-        # 为了与IC兼容，需要将路径转换为正确的格式
-        # IC期望的格式是一个包含所有节点的单一路径，用0分隔不同车辆的路径
-        best_path = []
-        if self.routes:
-            # 第一条路径直接添加
-            best_path.extend(self.routes[0])
-            # 后续路径去掉开头的0（因为前一条路径已经以0结尾）
-            for route in self.routes[1:]:
-                best_path.extend(route[1:])
-        
-        # 计算总距离
-        for i in range(len(best_path) - 1):
-            distance += self.distance_matrix[best_path[i]][best_path[i + 1]]
-        
-        return best_path, distance, self.distance_matrix
+        # 返回嵌套路径列表 (self.routes 已经是这种格式)
+        return self.routes, distance, self.distance_matrix
     
     def solve_with_ic(self):
         """
@@ -115,10 +102,10 @@ if __name__ == '__main__':
     nnh = CVRP_NNH(data, 4)
     
     # 不使用IC的原始解
-    best_path, distance, distance_matrix = nnh.solve()
-    print("NNH原始路径:", nnh.routes)
+    child_paths, distance, distance_matrix = nnh.solve()
+    print("NNH原始路径:", child_paths)
     print("NNH原始距离:", distance)
-    draw_figure(data, nnh.routes, nnh.figure_title)
+    draw_figure(data, child_paths, nnh.figure_title)
     
     # 使用IC改进的解
     improved_routes, improved_distance, _ = nnh.solve_with_ic()

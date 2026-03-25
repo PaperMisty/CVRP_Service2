@@ -125,7 +125,10 @@ class CVRP_GA:
         # 最后一次计算以确保best_path是最新且正确的
         self._calculate_fitness()
         
-        return self.best_path, self.best_distance, self.distance_matrix
+        # 将扁平化的 best_path 转换为嵌套的 child_paths
+        child_paths = IC.IC.split_path_static(self.best_path)
+        
+        return child_paths, self.best_distance, self.distance_matrix
 
 if __name__ == "__main__":
     data_dict = {
@@ -139,15 +142,14 @@ if __name__ == "__main__":
 
     start_time = time.time()
     ga = CVRP_GA(data=data, population=50, num_generations=200, mutation_rate=0.1, crossover_rate=0.8, capacity=50)
-    best_path, best_distance, distance_matrix = ga.run()
+    child_paths, best_distance, distance_matrix = ga.run()
     end_time = time.time()
 
     print(f"Accelerated GA finished in {end_time - start_time:.2f}s")
     print("Best distance:", best_distance)
 
-    if best_path:
-        ic_solver = IC.IC(distance_matrix, best_path)
-        ic_solver.split_path()
+    if child_paths:
+        ic_solver = IC.IC(distance_matrix, child_paths)
         child_paths, improved_distance = ic_solver.improve()
         print("Improved distance with IC:", improved_distance)
         print("Routes:", child_paths)

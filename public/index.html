@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CVRP Solver</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
@@ -23,7 +23,7 @@
                             <button id="fileSelect" class="button">选择文件</button>
                             <span id="fileName" class="file-name">未选择文件</span>
                         </div>            
-                        <span>没有数据文件？ <a href="{{ url_for('static', filename='download/location_中百仓储_武汉市.xlsx') }}">下载示例数据</a></span>
+                        <span>没有数据文件？ <a href="/static/download/location_中百仓储_武汉市.xlsx">下载示例数据</a></span>
                 
                     </div>
                 </div>
@@ -221,7 +221,7 @@
     <!-- Include ECharts and SheetJS (for Excel export) libraries -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.3.3/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="{{ url_for('static', filename='js/script.js', v=now) }}"></script>
+    <script src="/static/js/script.js"></script>
     <div class="vibe-coding">vibe-coding by Fanhoubao</div>
 </body>
 </html>

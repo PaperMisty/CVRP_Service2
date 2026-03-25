@@ -272,26 +272,24 @@ def upload_and_solve():
             if algorithm_choice == 'Clark-Wright':
                 print("Running Clark-Wright algorithm...")
                 cvrp_solver = CVRP_CW(data=df, capacity=capacity)
-                initial_path, _, distance_matrix = cvrp_solver.run()
+                routes, _, distance_matrix = cvrp_solver.run()
                 
                 print("Running IC improvement for Clark-Wright...")
-                ic_solver = IC.IC(distance_matrix, initial_path)
-                ic_solver.split_path()
+                ic_solver = IC.IC(distance_matrix, routes)
                 child_paths, best_distance = ic_solver.improve()
 
             elif algorithm_choice == 'ACO':
                 print("Running ACO algorithm...")
-                ants = request.form.get('aco_ants', 10)
-                iterations = request.form.get('aco_iterations', 20)
-                alpha = request.form.get('aco_alpha', 1.0)
-                beta = request.form.get('aco_beta', 5.0)
-                rho = request.form.get('aco_rho', 0.5)
+                ants = int(request.form.get('aco_ants', 10))
+                iterations = int(request.form.get('aco_iterations', 20))
+                alpha = float(request.form.get('aco_alpha', 1.0))
+                beta = float(request.form.get('aco_beta', 5.0))
+                rho = float(request.form.get('aco_rho', 0.5))
                 aco_solver = CVRP_ACO(data=df, num_ants=ants, num_iterations=iterations, alpha=alpha, beta=beta, rho=rho, capacity=capacity)
-                initial_path, _, distance_matrix = aco_solver.run()
+                routes, _, distance_matrix, _ = aco_solver.run()
 
                 print("Running IC improvement for ACO...")
-                ic_solver = IC.IC(distance_matrix, initial_path)
-                ic_solver.split_path()
+                ic_solver = IC.IC(distance_matrix, routes)
                 child_paths, best_distance = ic_solver.improve()
 
             elif algorithm_choice == 'GA':
@@ -308,24 +306,22 @@ def upload_and_solve():
                         error_msg.append("“迭代次数”不能大于 500。")
                     return jsonify({"error": " ".join(error_msg)}), 400
 
-                mutation = request.form.get('ga_mutation', 0.1)
-                crossover = request.form.get('ga_crossover', 0.8)
+                mutation = float(request.form.get('ga_mutation', 0.1))
+                crossover = float(request.form.get('ga_crossover', 0.8))
                 ga_solver = CVRP_GA(data=df, population=population, num_generations=generations, mutation_rate=mutation, crossover_rate=crossover, capacity=capacity)
-                initial_path, _, distance_matrix = ga_solver.run()
+                routes, _, distance_matrix = ga_solver.run()
 
                 print("Running IC improvement for GA...")
-                ic_solver = IC.IC(distance_matrix, initial_path)
-                ic_solver.split_path()
+                ic_solver = IC.IC(distance_matrix, routes)
                 child_paths, best_distance = ic_solver.improve()
 
             elif algorithm_choice == 'NNH':
                 print("Running NNH algorithm...")
                 nnh_solver = CVRP_NNH(data=df, vehicle_capacity=capacity)
-                initial_path, _, distance_matrix = nnh_solver.solve()
+                routes, _, distance_matrix = nnh_solver.solve()
 
                 print("Running IC improvement for NNH...")
-                ic_solver = IC.IC(distance_matrix, initial_path)
-                ic_solver.split_path()
+                ic_solver = IC.IC(distance_matrix, routes)
                 child_paths, best_distance = ic_solver.improve()
 
             else:

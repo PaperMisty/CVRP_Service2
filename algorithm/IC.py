@@ -39,4 +39,41 @@ class IC():
         print("improved length:", improved_distance)
         return self.child_paths, improved_distance
 
+    def split_path(self):
+        """将扁平化路径 [0,1,2,0,3,4,0] 转换为嵌套路径 [[0,1,2,0], [0,3,4,0]]"""
+        if not isinstance(self.child_paths, list):
+            self.child_paths = []
+            return
+            
+        # 如果已经是嵌套列表格式，则跳过
+        if len(self.child_paths) > 0 and isinstance(self.child_paths[0], list):
+            return
+            
+        flat_path = self.child_paths
+        new_child_paths = []
+        temp = []
+        for x in flat_path:
+            temp.append(x)
+            if x == 0 and len(temp) > 1:
+                new_child_paths.append(temp)
+                temp = [0]
+        self.child_paths = new_child_paths
+
+    @staticmethod
+    def split_path_static(flat_path):
+        """静态方法：将扁平化路径转换为嵌套路径"""
+        if not flat_path:
+            return []
+        if isinstance(flat_path[0], list):
+            return flat_path
+            
+        new_child_paths = []
+        temp = []
+        for x in flat_path:
+            temp.append(x)
+            if x == 0 and len(temp) > 1:
+                new_child_paths.append(temp)
+                temp = [0]
+        return new_child_paths
+
         
